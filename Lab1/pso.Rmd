@@ -1,0 +1,140 @@
+---
+title: "Lab1"
+author: "Filip Adamiak"
+date: "3/8/2022"
+output: html_document
+---
+
+## 1. Funkcja testowa - Rozenbrocka.
+
+```{r}
+rosen <- function(x) {
+  return( 100 * (x[2] - x[1] * x[1])^2 + (1 - x[1])^2 )
+}
+```
+
+```{r}
+x <- seq(-2,2,0.1)
+y <- seq(-2,2,0.1)
+
+n<-length(x)
+
+xy<-expand.grid(x,y)
+
+z<-rosen(xy)
+
+zm<-matrix(as.matrix(z), ncol=n)
+zm[1:5, 1:5]
+dim_zm <- dim(zm)
+
+cat("\n dim of zm:", dim_zm[1], "x", dim_zm[2])
+```
+
+## 2. Generacja losowych położeń dla ziarna 123 - stado ptaków.
+
+```{r}
+set.seed(123)
+n_birds = 16
+bx <- runif(n_birds, min = -2, max = 2)
+by <- runif(n_birds, min = -2, max = 2)
+
+b <- data.frame(bx,by)
+head(b)
+```
+
+## 3. Ramka z pozycjami i wartoscia funkcji celu (z).
+
+```{r}
+z <- as.numeric(as.matrix(rosen(b)))
+b <- cbind(b, z)
+head(b)
+```
+
+## 4. Wybranie najlepszego ptaszka i zwrocenie jego indexu.
+
+```{r}
+best_bird <- which.min(b$z)
+best_bird
+```
+
+## 5. Ramka do zapisu ewolucji rozwiazania.
+
+```{r}
+best_evo <- data.frame(bx=double(),by=double(),z=double())
+```
+
+## 6. PSO - "bare bones"
+
+```{r}
+max_iter = 100
+
+for (k in 1:max_iter){
+  for (i in 1:n_birds){
+    #odchylenia standardowe dla wymiaru x i y 
+    sigma_x<-abs(b$bx[i] - b$bx[best_bird])
+    sigma_y<-abs(b$by[i] - b$by[best_bird])
+    
+    #testowe pozycje i wartosc funkcji 
+    test_x <- rnorm(1, mean=(b$bx[i] + b$bx[best_bird])/2 , sd=sigma_x)
+    test_y <- rnorm(1, mean=(b$by[i] + b$by[best_bird])/2 , sd=sigma_y)
+    test_z <- rosen(c(test_x, test_y))
+    
+    #jezli jestem lepszy niz poprzedni robie hop
+    if ( test_z < b$z[i] ) {
+      b$bx[i] <- test_x
+      b$by[i] <- test_y
+      b$z[i]  <- test_z
+    }
+    
+    #ktory ptaszek jest teraz najlepszy?
+    best_bird<-which.min(b$z)
+    
+    #zapis ewolucji rozwiazania
+    best_evo[k,]<-b[best_bird,]
+  }
+}
+```
+
+```{r}
+print(tail(best_evo))
+```
+
+```{r}
+plot(x, y, type='n')
+contour(x, y, zm, add=TRUE, lty=4, lwd = 1, nlevels = 950, 
+        drawlabels = FALSE, col = "darkblue")
+points(best_evo$bx, best_evo$by, t="b", pch=19)
+```
+
+## 7. PSO - wariant kanoniczny
+
+```{r}
+max_iter = 100
+
+for (k in 1:max_iter){
+  for (i in 1:n_birds){
+    #odchylenia standardowe dla wymiaru x i y 
+    sigma_x <- 2 / (4.1 - 2 + sqrt((4.1)^2 - 4 * 4.1))
+    
+    #testowe pozycje i wartosc funkcji 
+    v_x <- rnorm(1, mean=(b$bx[i] + b$bx[best_bird])/2 , sd=sigma_x)
+    v_x <- sigma_x * (b$bx[i] + runif(1, 0, 2.05)) #ile wynosza sigma 1 i 2, 
+    #poprzednie wartosci
+    v_y <- 
+    test_z <- rosen(c(test_x, test_y))
+    
+    #jezli jestem lepszy niz poprzedni robie hop
+    if ( test_z < b$z[i] ) {
+      b$bx[i] <- test_x
+      b$by[i] <- test_y
+      b$z[i]  <- test_z
+    }
+    
+    #ktory ptaszek jest teraz najlepszy?
+    best_bird<-which.min(b$z)
+    
+    #zapis ewolucji rozwiazania
+    best_evo[k,]<-b[best_bird,]
+  }
+}
+```
